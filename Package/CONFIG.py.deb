@@ -1,0 +1,122 @@
+import ops
+import iopc
+
+pkg_path = ""
+output_dir = ""
+arch = ""
+src_lib_dir = ""
+dst_lib_dir = ""
+src_lib_drbd_dir = ""
+dst_lib_drbd_dir = ""
+src_usr_lib_dir = ""
+dst_usr_lib_dir = ""
+src_usr_bin_dir = ""
+dst_usr_bin_dir = ""
+src_usr_sbin_dir = ""
+dst_usr_sbin_dir = ""
+src_sbin_dir = ""
+dst_sbin_dir = ""
+src_include_dir = ""
+dst_include_dir = ""
+
+def set_global(args):
+    global pkg_path
+    global output_dir
+    global arch
+    global src_lib_dir
+    global dst_lib_dir
+    global src_lib_drbd_dir
+    global dst_lib_drbd_dir
+    global src_usr_lib_dir
+    global dst_usr_lib_dir
+    global src_usr_bin_dir
+    global dst_usr_bin_dir
+    global src_usr_sbin_dir
+    global dst_usr_sbin_dir
+    global src_sbin_dir
+    global dst_sbin_dir
+    global src_include_dir
+    global dst_include_dir
+    pkg_path = args["pkg_path"]
+    output_dir = args["output_path"]
+    arch = ops.getEnv("ARCH_ALT")
+    if arch == "armhf":
+        src_lib_dir = iopc.getBaseRootFile("lib")
+        src_usr_lib_dir = iopc.getBaseRootFile("usr/lib/arm-linux-gnueabihf")
+        src_sbin_dir = iopc.getBaseRootFile("sbin")
+    elif arch == "armel":
+        src_lib_dir = iopc.getBaseRootFile("lib")
+        src_usr_lib_dir = iopc.getBaseRootFile("usr/lib/arm-linux-gnueabi")
+        src_sbin_dir = iopc.getBaseRootFile("sbin")
+    elif arch == "x86_64":
+        src_lib_dir = iopc.getBaseRootFile("lib")
+        src_usr_lib_dir = iopc.getBaseRootFile("usr/lib/x86_64-linux-gnu")
+        src_sbin_dir = iopc.getBaseRootFile("sbin")
+    else:
+        sys.exit(1)
+    src_lib_drbd_dir = ops.path_join(src_lib_dir, "drbd")
+    dst_lib_dir = ops.path_join(output_dir, "lib")
+    dst_lib_drbd_dir = ops.path_join(dst_lib_dir, "drbd")
+    dst_usr_lib_dir = ops.path_join(output_dir, "usr/lib")
+    dst_sbin_dir = ops.path_join(output_dir, "sbin")
+
+    src_usr_bin_dir = iopc.getBaseRootFile("usr/bin")
+    dst_usr_bin_dir = ops.path_join(output_dir, "usr/bin")
+
+    src_usr_sbin_dir = iopc.getBaseRootFile("usr/sbin")
+    dst_usr_sbin_dir = ops.path_join(output_dir, "usr/sbin")
+
+    src_include_dir = iopc.getBaseRootFile("usr/include/selinux")
+    dst_include_dir = ops.path_join("include",args["pkg_name"])
+
+def MAIN_ENV(args):
+    set_global(args)
+    return False
+
+def MAIN_EXTRACT(args):
+    set_global(args)
+
+    ops.mkdir(dst_sbin_dir)
+    ops.copyto(ops.path_join(src_sbin_dir, "drbdadm"), dst_sbin_dir)
+    ops.copyto(ops.path_join(src_sbin_dir, "drbdmeta"), dst_sbin_dir)
+    ops.copyto(ops.path_join(src_sbin_dir, "drbdmon"), dst_sbin_dir)
+    ops.copyto(ops.path_join(src_sbin_dir, "drbdsetup"), dst_sbin_dir)
+
+    ops.mkdir(dst_lib_drbd_dir)
+    ops.copyto(ops.path_join(src_lib_drbd_dir, "drbdadm-84"), dst_lib_drbd_dir)
+    ops.copyto(ops.path_join(src_lib_drbd_dir, "drbdsetup-84"), dst_lib_drbd_dir)
+
+    return True
+
+def MAIN_PATCH(args, patch_group_name):
+    set_global(args)
+    for patch in iopc.get_patch_list(pkg_path, patch_group_name):
+        if iopc.apply_patch(output_dir, patch):
+            continue
+        else:
+            sys.exit(1)
+
+    return True
+
+def MAIN_CONFIGURE(args):
+    set_global(args)
+    return False
+
+def MAIN_BUILD(args):
+    set_global(args)
+    return False
+
+def MAIN_INSTALL(args):
+    set_global(args)
+
+    iopc.installBin(args["pkg_name"], ops.path_join(dst_sbin_dir, "."), "sbin") 
+    iopc.installBin(args["pkg_name"], ops.path_join(dst_lib_dir, "."), "lib") 
+    return False
+
+def MAIN_CLEAN_BUILD(args):
+    set_global(args)
+    return False
+
+def MAIN(args):
+    set_global(args)
+

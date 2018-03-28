@@ -1,0 +1,38 @@
+Test steps:
+
+global {
+  usage-count no;
+}
+common {
+  net {
+    verify-alg md5;
+    protocol C;
+  }
+}
+resource ha {
+  on qemu1 {
+    device /dev/drbd0;
+    disk /dev/sdb;
+    address 192.168.1.115:1166;
+    meta-disk internal;
+ }
+ on qemu2 {
+    device /dev/drbd0;
+    disk /dev/sdb;
+    address 192.168.1.116:1166;
+    meta-disk internal;
+  }
+}
+
+
+1. create drbd configuration file
+2. set hostname
+3. drbdadm create md
+      drbdadm create-md -c /tmp/drbd.cfg -W --force all
+4. drbd up
+      drbdadm up -c /tmp/drbd.cfg all
+5. set to Primary/Secondary
+    primary	: drbdadm primary --force -c /tmp/drbd.cfg all
+    secondary	: drbdadm secondary  -c /tmp/drbd.cfg all
+
+6. if set to Primary, then mount drbd device
